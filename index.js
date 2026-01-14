@@ -1,89 +1,76 @@
 import TelegramBot from "node-telegram-bot-api";
 import express from "express";
 
+/* ---------- Startup Logs ---------- */
+console.log("RepoReply Telegram Bot starting...");
+
 /* ---------- Init ---------- */
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 /* ---------- Helpers ---------- */
-function getChatLabel(chat) {
-  switch (chat.type) {
-    case "private":
-      return "Private Chat";
-    case "group":
-      return "Group";
-    case "supergroup":
-      return "Supergroup";
-    case "channel":
-      return "Channel";
-    default:
-      return "Unknown";
-  }
+function chatTypeLabel(type) {
+  if (type === "private") return "Private Chat";
+  if (type === "group") return "Group";
+  if (type === "supergroup") return "Supergroup";
+  if (type === "channel") return "Channel";
+  return "Unknown";
 }
 
-/* ---------- Commands ---------- */
+/* ---------- /start ---------- */
 bot.onText(/\/start/, (msg) => {
   bot.sendMessage(
     msg.chat.id,
-    "👋 RepoReply Telegram Bot\n\n" +
-    "Use /id to get the Chat or Channel ID.\n" +
-    "Add me as admin to channels to enable notifications."
+    `👋 Hi ${msg.from.first_name || ""}!\n\n` +
+    `🎉 Congratulations!\n` +
+    `RepoReply Telegram Bot is now active.\n\n` +
+    `Commands:\n` +
+    `/id – Get this chat or channel ID\n` +
+    `/help – Usage info\n\n` +
+    `Add me as admin to channels to enable notifications.`
   );
 });
 
+/* ---------- /help ---------- */
 bot.onText(/\/help/, (msg) => {
   bot.sendMessage(
     msg.chat.id,
-    "/id – Get chat or channel ID\n" +
-    "/register – Register this chat for RepoReply notifications"
+    `/start – Welcome message\n` +
+    `/id – Get Chat / Group / Channel ID\n\n` +
+    `For channels, bot must be admin.`
   );
 });
 
+/* ---------- /id ---------- */
 bot.onText(/\/id/, (msg) => {
   const chat = msg.chat;
 
   bot.sendMessage(
     chat.id,
-    `Type: ${getChatLabel(chat)}\nID: ${chat.id}`
+    `📌 Chat Type: ${chatTypeLabel(chat.type)}\n` +
+    `🆔 ID: ${chat.id}`
   );
 });
 
-bot.onText(/\/register/, async (msg) => {
-  const chat = msg.chat;
-
-  /* 🔒 Future RepoReply integration */
-  // await saveToDatabase({
-  //   chatId: chat.id,
-  //   type: chat.type,
-  //   title: chat.title || null
-  // });
-
-  bot.sendMessage(
-    chat.id,
-    "✅ This chat has been registered for RepoReply notifications."
-  );
-});
-
-/* ---------- Channel Posts (Admin Only) ---------- */
+/* ---------- Channel Post (Admin Required) ---------- */
 bot.on("channel_post", (msg) => {
   const chat = msg.chat;
 
-  // Silent capture for notifications
-  console.log("Channel registered:", chat.id);
+  console.log("Channel detected:", chat.id);
 
-  // Optional one-time confirmation
   bot.sendMessage(
     chat.id,
-    "✅ RepoReply connected to this channel."
+    `✅ RepoReply connected\n🆔 Channel ID: ${chat.id}`
   );
 });
 
-/* ---------- Health Endpoint ---------- */
+/* ---------- Health Check ---------- */
 app.get("/", (_, res) => {
   res.status(200).send("RepoReply Telegram Bot OK");
 });
 
+/* ---------- Start Server ---------- */
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

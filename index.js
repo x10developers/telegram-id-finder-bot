@@ -1,23 +1,53 @@
 /**
- * Telegram Find ID Bot
+ * Telegram Find ID Bot for Render
  * Commands:
  * - /start - Welcome message with instructions
  * - /getid - Get your user ID and current chat ID
  * - /channel - Instructions for getting channel ID
  * - /group - Instructions for getting group ID
+ *
+ * File: index.js
  */
 
 import TelegramBot from "node-telegram-bot-api";
+import express from "express";
 
 // ============================
 // Config
 // ============================
-const BOT_TOKEN = process.env.BOT_TOKEN;
+const BOT_TOKEN = process.env.ID_BOT_TOKEN;
+const PORT = process.env.PORT || 3000;
+const RENDER_URL =
+  process.env.RENDER_EXTERNAL_URL ||
+  "https://telegram-id-finder-bot.onrender.com";
 
 if (!BOT_TOKEN) {
-  console.error("❌ TELEGRAM_FINDID_BOT_TOKEN missing in .env file");
+  console.error(
+    "❌ TELEGRAM_FINDID_BOT_TOKEN missing in environment variables",
+  );
   process.exit(1);
 }
+
+// ============================
+// Express Server for Render
+// ============================
+const app = express();
+
+app.get("/", (req, res) => {
+  res.json({
+    status: "Bot is running",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
+});
+
+app.get("/health", (req, res) => {
+  res.json({ status: "healthy", uptime: process.uptime() });
+});
+
+const server = app.listen(PORT, () => {
+  console.log(`🌐 Express server running on port ${PORT}`);
+});
 
 // ============================
 // Bot Init
@@ -29,8 +59,6 @@ console.log("🤖 Telegram FindID Bot started successfully");
 // ============================
 // Keep-Alive Logic for Render
 // ============================
-const RENDER_URL = "https://telegram-id-finder-bot.onrender.com/";
-
 async function keepAlive() {
   try {
     const response = await fetch(RENDER_URL);
@@ -81,9 +109,7 @@ This bot helps you retrieve Telegram IDs for users, groups, and channels.
     parse_mode: "Markdown",
     reply_markup: {
       inline_keyboard: [
-        [
-          { text: "🆔 Get My ID", callback_data: "cmd_getid" },
-        ],
+        [{ text: "🆔 Get My ID", callback_data: "cmd_getid" }],
         [
           { text: "📢 Channel ID Guide", callback_data: "cmd_channel" },
           { text: "👥 Group ID Guide", callback_data: "cmd_group" },
@@ -171,12 +197,12 @@ bot.onText(/^\/channel$/, async (msg) => {
 *For Public Channels:*
 1️⃣ Open the channel you want
 2️⃣ Forward ANY post from that channel to this bot
-3️⃣ Send \`/getid\` command
+3️⃣ The ID will appear automatically!
 
 *For Private Channels:*
 1️⃣ You must be a member or admin
 2️⃣ Forward ANY post from the channel to this bot
-3️⃣ Send \`/getid\` command
+3️⃣ The ID will appear automatically!
 
 ⚠️ *Important Notes:*
 • Channel links or usernames alone will NOT work
@@ -184,7 +210,7 @@ bot.onText(/^\/channel$/, async (msg) => {
 • No admin rights required
 • Forwarding must be enabled in the channel
 
-✅ *Try it now:* Forward a channel post to me and use /getid
+✅ *Try it now:* Forward a channel post to me
   `.trim();
 
   await bot.sendMessage(msg.chat.id, text, { parse_mode: "Markdown" });
@@ -204,8 +230,7 @@ bot.onText(/^\/group$/, async (msg) => {
 
 *Method 2: Forwarding a Message*
 1️⃣ Forward ANY message from the group to this bot (in private chat)
-2️⃣ Send \`/getid\` command
-3️⃣ Bot will show the Group ID
+2️⃣ The ID will appear automatically!
 
 ⚠️ *Important Notes:*
 • Group invite links alone will NOT work
@@ -213,7 +238,7 @@ bot.onText(/^\/group$/, async (msg) => {
 • No admin rights required
 • Forwarding must be enabled in the group
 
-✅ *Try it now:* Forward a group message to me and use /getid
+✅ *Try it now:* Forward a group message to me
   `.trim();
 
   await bot.sendMessage(msg.chat.id, text, { parse_mode: "Markdown" });
@@ -241,27 +266,26 @@ bot.on("callback_query", async (query) => {
   }
 
   if (query.data === "cmd_channel") {
-    bot.sendMessage(chatId, "📢 Sending channel guide...");
-    // Trigger /channel command
-    await bot.processUpdate({
-      message: {
-        chat: { id: chatId },
-        from: query.from,
-        text: "/channel",
-      },
-    });
+    const text = `
+📢 *How to Get a Channel ID*
+
+Simply forward ANY post from the channel to this bot and the ID will appear automatically!
+
+⚠️ Channel links won't work - you must forward an actual message.
+    `.trim();
+    await bot.sendMessage(chatId, text, { parse_mode: "Markdown" });
   }
 
   if (query.data === "cmd_group") {
-    bot.sendMessage(chatId, "👥 Sending group guide...");
-    // Trigger /group command
-    await bot.processUpdate({
-      message: {
-        chat: { id: chatId },
-        from: query.from,
-        text: "/group",
-      },
-    });
+    const text = `
+👥 *How to Get a Group ID*
+
+*Option 1:* Add bot to group and use /getid there
+*Option 2:* Forward any message from the group to this bot
+
+The ID will appear automatically!
+    `.trim();
+    await bot.sendMessage(chatId, text, { parse_mode: "Markdown" });
   }
 
   await bot.answerCallbackQuery(query.id);
@@ -284,11 +308,17 @@ bot.on("error", (err) => {
 process.on("SIGTERM", () => {
   console.log("🛑 Received SIGTERM, shutting down gracefully...");
   bot.stopPolling();
-  process.exit(0);
+  server.close(() => {
+    console.log("✅ Server closed");
+    process.exit(0);
+  });
 });
 
 process.on("SIGINT", () => {
   console.log("🛑 Received SIGINT, shutting down gracefully...");
   bot.stopPolling();
-  process.exit(0);
+  server.close(() => {
+    console.log("✅ Server closed");
+    process.exit(0);
+  });
 });

@@ -1,12 +1,17 @@
 {
-  "name": "reporeply-telegram-bot",
+  "name": "telegram-findid-bot",
   "version": "1.0.0",
   "type": "module",
+  "description": "Telegram bot to find user, group, and channel IDs",
+  "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "node-telegram-bot-api": "^0.66.0"
+    "node-telegram-bot-api": "^0.66.0",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

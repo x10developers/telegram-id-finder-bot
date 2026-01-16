@@ -15,7 +15,7 @@ import express from "express";
 // ============================
 // Config
 // ============================
-const BOT_TOKEN = process.env.ID_BOT_TOKEN;
+const BOT_TOKEN = process.env.TELEGRAM_FINDID_BOT_TOKEN;
 const PORT = process.env.PORT || 3000;
 const RENDER_URL =
   process.env.RENDER_EXTERNAL_URL ||

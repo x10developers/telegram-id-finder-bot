@@ -7,6 +7,7 @@
  * - /group - Instructions for getting group ID
  */
 
+import "dotenv/config";
 import TelegramBot from "node-telegram-bot-api";
 
 // ============================
@@ -27,9 +28,40 @@ const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 console.log("🤖 Telegram FindID Bot started successfully");
 
 // ============================
+// Keep-Alive Logic for Render
+// ============================
+const RENDER_URL = "https://telegram-id-finder-bot.onrender.com/";
+
+async function keepAlive() {
+  try {
+    const response = await fetch(RENDER_URL);
+    console.log(`✅ Keep-alive ping: ${response.status}`);
+  } catch (err) {
+    console.error("❌ Keep-alive failed:", err.message);
+  }
+}
+
+// Ping every 10 seconds for 10 pings (100 seconds total)
+function activateService() {
+  console.log("🔄 Activating service with keep-alive pings...");
+  let count = 0;
+  const interval = setInterval(() => {
+    keepAlive();
+    count++;
+    if (count >= 10) {
+      clearInterval(interval);
+      console.log("✅ Service activation complete");
+    }
+  }, 10000); // 10 seconds
+}
+
+// ============================
 // /start - Welcome & Instructions
 // ============================
 bot.onText(/^\/start$/, async (msg) => {
+  // Activate service when /start is received
+  activateService();
+
   const text = `
 👋 *Welcome to Find ID Bot*
 
@@ -50,7 +82,9 @@ This bot helps you retrieve Telegram IDs for users, groups, and channels.
     parse_mode: "Markdown",
     reply_markup: {
       inline_keyboard: [
-        [{ text: "🆔 Get My ID", callback_data: "cmd_getid" }],
+        [
+          { text: "🆔 Get My ID", callback_data: "cmd_getid" },
+        ],
         [
           { text: "📢 Channel ID Guide", callback_data: "cmd_channel" },
           { text: "👥 Group ID Guide", callback_data: "cmd_group" },

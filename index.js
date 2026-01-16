@@ -137,6 +137,31 @@ ${chat.title ? `• Chat Title: ${chat.title}` : ""}
 });
 
 // ============================
+// Handle ALL forwarded messages
+// ============================
+bot.on("message", async (msg) => {
+  // Skip if it's a command
+  if (msg.text && msg.text.startsWith("/")) return;
+
+  // Auto-detect forwarded messages and show ID
+  if (msg.forward_from_chat) {
+    const fwd = msg.forward_from_chat;
+    const response = `
+🆔 *Forwarded Chat Detected!*
+
+💬 Chat ID: \`${fwd.id}\`
+🏷️ Type: ${fwd.type}
+📛 Title: ${fwd.title || "N/A"}
+${fwd.username ? `🔗 Username: @${fwd.username}` : ""}
+
+💡 You can also use \`/getid\` after forwarding
+    `.trim();
+
+    await bot.sendMessage(msg.chat.id, response, { parse_mode: "Markdown" });
+  }
+});
+
+// ============================
 // /channel - Channel ID Guide
 // ============================
 bot.onText(/^\/channel$/, async (msg) => {

@@ -7,7 +7,6 @@
  * - /group - Instructions for getting group ID
  */
 
-import "dotenv/config";
 import TelegramBot from "node-telegram-bot-api";
 
 // ============================

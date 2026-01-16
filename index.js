@@ -12,7 +12,7 @@ import TelegramBot from "node-telegram-bot-api";
 // ============================
 // Config
 // ============================
-const BOT_TOKEN = process.env.TELEGRAM_FINDID_BOT_TOKEN;
+const BOT_TOKEN = process.env.BOT_TOKEN;
 
 if (!BOT_TOKEN) {
   console.error("❌ TELEGRAM_FINDID_BOT_TOKEN missing in .env file");
